@@ -38,37 +38,58 @@ class Scanner {
     }
 
     private void scanToken(char character) {
+        if (singleCharacterToken(character) != null) {
+            addToken(singleCharacterToken(character));
+            return;
+        }
+
+        if (isComparisonOperator(character)) {
+            addComparisonOperatorTokenFor(character);
+            return;
+        }
+
+        if (character == '/') {
+            if (!isAComment()) {
+                addToken(SLASH);
+            }
+            return;
+        }
+
         switch (character) {
-            case '(':
-                addToken(LEFT_PAREN);
-                break;
-            case ')':
-                addToken(RIGHT_PAREN);
-                break;
-            case '{':
-                addToken(LEFT_BRACE);
-                break;
-            case '}':
-                addToken(RIGHT_BRACE);
-                break;
-            case ',':
-                addToken(COMMA);
-                break;
-            case '.':
-                addToken(DOT);
-                break;
-            case '-':
-                addToken(MINUS);
-                break;
-            case '+':
-                addToken(PLUS);
-                break;
-            case ';':
-                addToken(SEMICOLON);
-                break;
-            case '*':
-                addToken(STAR);
-                break;
+            case ' ': //God, I hate this about Java
+            case '\r':
+            case '\t':
+                // Ignore whitespace.
+                return;
+            case '\n':
+                line++;
+                return;
+        }
+
+        if (character == '"') {
+            addStringToken();
+            return;
+        }
+
+        if (isDigit(character)) {
+            addNumberToken();
+            return;
+        }
+
+        if (isAlpha(character)) {
+            addIdentifierToken();
+            return;
+        }
+
+        Lox.error(line, "Unexpected character.");
+    }
+
+    private boolean isComparisonOperator(char character) {
+        return comparisonOperators.contains(character);
+    }
+
+    private void addComparisonOperatorTokenFor(char character) {
+        switch (character) {
             case '!':
                 addToken(consumeIfNext('=') ? BANG_EQUAL : BANG);
                 break;
@@ -81,36 +102,20 @@ class Scanner {
             case '>':
                 addToken(consumeIfNext('=') ? GREATER_EQUAL : GREATER);
                 break;
-            case '/':
-                if (consumeIfNext('/')) {
-                    // A comment goes until the end of the line.
-                    while (!isNextChar('\n') && !isAtEnd()) cursorIndex++;
-                } else if (consumeIfNext('*')) {
-                    while (!(isNextChar('*') && source.charAt(cursorIndex) == '/') && !isAtEnd()) cursorIndex++;
-                    cursorIndex ++;
-                } else {
-                    addToken(SLASH);
-                }
-                break;
-            case ' ': //God, I hate this about Java
-            case '\r':
-            case '\t':
-                // Ignore whitespace.
-                break;
-            case '\n':
-                line++;
-                break;
-            case '"':
-                string();
-                break;
-            default:
-                if (isDigit(character)) {
-                    number();
-                } else if (isAlpha(character)) {
-                    identifier();
-                } else {
-                    Lox.error(line, "Unexpected character.");
-                }
+        }
+    }
+
+    private boolean isAComment() {
+        if (consumeIfNext('/')) {
+            // A comment goes until the end of the line.
+            while (!isNextChar('\n') && !isAtEnd()) cursorIndex++;
+            return true;
+        } else if (consumeIfNext('*')) {
+            while (!(isNextChar('*') && source.charAt(cursorIndex) == '/') && !isAtEnd()) cursorIndex++;
+            cursorIndex++;
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -118,15 +123,19 @@ class Scanner {
         return c >= '0' && c <= '9';
     }
 
-    private void identifier() {
-        while (isAlphaNumeric(source.charAt(cursorIndex))) cursorIndex++;
+    private void addIdentifierToken() {
+        while (isAlphaNumeric(source.charAt(cursorIndex - 1))  && !isNextChar(';') && !isAtEnd()) cursorIndex++;
 
         String text = source.substring(start, cursorIndex);
 
         TokenType type = keywords.get(text);
         if (type == null) type = IDENTIFIER;
         addToken(type);
+    }
 
+    private TokenType singleCharacterToken(char character) {
+        TokenType type = singleCharacterTokens.get(character);
+        return type;
     }
 
     private boolean isAlpha(char c) {
@@ -139,8 +148,11 @@ class Scanner {
         return isAlpha(c) || isDigit(c);
     }
 
-    private void number() {
-        while (isDigit(source.charAt(cursorIndex))) cursorIndex++;
+    private void addNumberToken() {
+        System.out.println(cursorIndex);
+        while (isDigit(source.charAt(cursorIndex - 1)) && !isNextChar(';') && !isAtEnd()) {
+            cursorIndex++;
+        }
 
         // Look for a fractional part.
         if (isNextChar('.') && isDigit(source.charAt(cursorIndex + 1))) {
@@ -154,14 +166,14 @@ class Scanner {
                 Double.parseDouble(source.substring(start, cursorIndex)));
     }
 
-    private void string() {
+    private void addStringToken() {
         while (!isNextChar('"') && !isAtEnd()) {
             if (isNextChar('\n')) line++;
             cursorIndex++;
         }
 
         if (isAtEnd()) {
-            Lox.error(line, "Unterminated string.");
+            Lox.error(line, "Unterminated addStringToken.");
             return;
         }
 
@@ -197,25 +209,49 @@ class Scanner {
     }
 
     private static final Map<String, TokenType> keywords;
+    private static final Map<Character, TokenType> singleCharacterTokens;
+    private static final List<Character> comparisonOperators;
+
+    static {
+        comparisonOperators = new ArrayList<Character>();
+        comparisonOperators.add('!');
+        comparisonOperators.add('=');
+        comparisonOperators.add('>');
+        comparisonOperators.add('<');
+    }
 
     static {
         keywords = new HashMap<>();
-        keywords.put("and",    AND);
-        keywords.put("class",  CLASS);
-        keywords.put("else",   ELSE);
-        keywords.put("false",  FALSE);
-        keywords.put("for",    FOR);
-        keywords.put("fun",    FUN);
-        keywords.put("if",     IF);
-        keywords.put("nil",    NIL);
-        keywords.put("or",     OR);
-        keywords.put("print",  PRINT);
+        keywords.put("and", AND);
+        keywords.put("class", CLASS);
+        keywords.put("else", ELSE);
+        keywords.put("false", FALSE);
+        keywords.put("for", FOR);
+        keywords.put("fun", FUN);
+        keywords.put("if", IF);
+        keywords.put("nil", NIL);
+        keywords.put("or", OR);
+        keywords.put("print", PRINT);
         keywords.put("return", RETURN);
-        keywords.put("super",  SUPER);
-        keywords.put("this",   THIS);
-        keywords.put("true",   TRUE);
-        keywords.put("var",    VAR);
-        keywords.put("while",  WHILE);
+        keywords.put("super", SUPER);
+        keywords.put("this", THIS);
+        keywords.put("true", TRUE);
+        keywords.put("var", VAR);
+        keywords.put("while", WHILE);
+    }
+
+    static {
+        singleCharacterTokens = new HashMap<>();
+        singleCharacterTokens.put('(', LEFT_PAREN);
+        singleCharacterTokens.put(')', RIGHT_PAREN);
+        singleCharacterTokens.put('{', LEFT_BRACE);
+        singleCharacterTokens.put('}', RIGHT_BRACE);
+        singleCharacterTokens.put(',', COMMA);
+        singleCharacterTokens.put('.', DOT);
+        singleCharacterTokens.put('-', MINUS);
+        singleCharacterTokens.put('+', PLUS);
+        singleCharacterTokens.put(';', SEMICOLON);
+        singleCharacterTokens.put('*', STAR);
     }
 
 }
