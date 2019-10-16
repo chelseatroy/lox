@@ -85,6 +85,9 @@ class Scanner {
                 if (consumeIfNext('/')) {
                     // A comment goes until the end of the line.
                     while (!isNextChar('\n') && !isAtEnd()) cursorIndex++;
+                } else if (consumeIfNext('*')) {
+                    while (!(isNextChar('*') && source.charAt(cursorIndex) == '/') && !isAtEnd()) cursorIndex++;
+                    cursorIndex ++;
                 } else {
                     addToken(SLASH);
                 }
