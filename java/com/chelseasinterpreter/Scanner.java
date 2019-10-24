@@ -1,6 +1,8 @@
 package com.chelseasinterpreter;
 
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -124,7 +126,9 @@ class Scanner {
     }
 
     private void addIdentifierToken() {
-        while (isAlphaNumeric(source.charAt(cursorIndex - 1))  && !isNextChar(';') && !isAtEnd()) cursorIndex++;
+        while (isAlphaNumeric(source.charAt(cursorIndex - 1))  &&
+                !isNextChar(';') &&
+                !isAtEnd()) cursorIndex++;
 
         String text = source.substring(start, cursorIndex);
 
@@ -149,7 +153,10 @@ class Scanner {
     }
 
     private void addNumberToken() {
-        while (isDigit(source.charAt(cursorIndex - 1)) && !isNextChar(';') && !isAtEnd()) {
+        while (isDigit(source.charAt(cursorIndex - 1)) &&
+                !isNextChar(';') &&
+                !isNextChar(reserved) && //Fix later?
+                !isAtEnd()) {
             cursorIndex++;
         }
 
@@ -161,8 +168,7 @@ class Scanner {
             while (isDigit(source.charAt(cursorIndex))) cursorIndex++;
         }
 
-        addToken(NUMBER,
-                Double.parseDouble(source.substring(start, cursorIndex)));
+        addToken(NUMBER, Double.parseDouble(source.substring(start, cursorIndex)));
     }
 
     private void addStringToken() {
@@ -197,6 +203,11 @@ class Scanner {
         return expected == source.charAt(cursorIndex);
     }
 
+    private boolean isNextChar(Set<Character> expected) {
+        if (isAtEnd()) return false;
+        return expected.contains(source.charAt(cursorIndex));
+    }
+
 
     private void addToken(TokenType type) {
         addToken(type, null);
@@ -207,9 +218,12 @@ class Scanner {
         tokens.add(new Token(type, text, literal, line));
     }
 
+
     private static final Map<String, TokenType> keywords;
     private static final Map<Character, TokenType> singleCharacterTokens;
     private static final List<Character> comparisonOperators;
+    private static final Set<Character> reserved;
+
 
     static {
         comparisonOperators = new ArrayList<Character>();
@@ -253,4 +267,9 @@ class Scanner {
         singleCharacterTokens.put('*', STAR);
     }
 
+    static {
+        reserved = new HashSet<Character>(singleCharacterTokens.keySet());
+        reserved.addAll(comparisonOperators);
+        reserved.remove(",");
+    }
 }
