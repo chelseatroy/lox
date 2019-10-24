@@ -149,7 +149,6 @@ class Scanner {
     }
 
     private void addNumberToken() {
-        System.out.println(cursorIndex);
         while (isDigit(source.charAt(cursorIndex - 1)) && !isNextChar(';') && !isAtEnd()) {
             cursorIndex++;
         }
