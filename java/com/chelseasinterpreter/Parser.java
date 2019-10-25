@@ -5,7 +5,8 @@ import java.util.List;
 import static com.chelseasinterpreter.TokenType.*;
 
 class Parser {
-    private static class ParseError extends RuntimeException {}
+    private static class ParseError extends RuntimeException {
+    }
 
     private final List<Token> tokens;
     private int cursorIndex = 0;
@@ -23,7 +24,19 @@ class Parser {
     }
 
     private Expr expression() {
-        return equality();
+        return block();
+    }
+
+    private Expr block() {
+        Expr expr = equality();
+
+        while (consuming(COMMA)) {
+            Token operator = previousToken();
+            Expr right = equality();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+
+        return expr;
     }
 
     private Expr equality() {
@@ -65,7 +78,7 @@ class Parser {
     private Expr multiplication() {
         Expr expr = unary();
 
-        while(consuming(STAR, SLASH)) {
+        while (consuming(STAR, SLASH)) {
             Token operator = previousToken();
             Expr right = unary();
             expr = new Expr.Binary(expr, operator, right);
@@ -75,7 +88,7 @@ class Parser {
     }
 
     private Expr unary() {
-        if(consuming(BANG, MINUS)){
+        if (consuming(BANG, MINUS)) {
             Token operator = previousToken();
             Expr right = primary();
             return new Expr.Unary(operator, right);
@@ -85,12 +98,12 @@ class Parser {
     }
 
     private Expr primary() {
-        if(consuming(FALSE)) return new Expr.Literal(false);
+        if (consuming(FALSE)) return new Expr.Literal(false);
         if (consuming(TRUE)) return new Expr.Literal(true);
 
-        if(consuming(NIL)) return new Expr.Literal(null);
+        if (consuming(NIL)) return new Expr.Literal(null);
 
-        if(consuming(NUMBER, STRING)) {
+        if (consuming(NUMBER, STRING)) {
             return new Expr.Literal(previousToken().literal);
         }
 
@@ -107,7 +120,7 @@ class Parser {
     }
 
     private Token consume(TokenType expectedType, String errorMessage) {
-        if(nextTokenIsA(expectedType)){
+        if (nextTokenIsA(expectedType)) {
             advance();
             return previousToken();
         }
