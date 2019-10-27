@@ -28,14 +28,27 @@ class Parser {
     }
 
     private Expr block() {
-        Expr expr = equality();
+        Expr expr = conditional();
 
         while (consuming(COMMA)) {
             Token operator = previousToken();
-            Expr right = equality();
+            Expr right = conditional();
             expr = new Expr.Binary(expr, operator, right);
         }
+        System.out.println(expr.toString());
+        return expr;
+    }
 
+    private Expr conditional() {
+        Expr expr = equality();
+
+        if (consuming(QUESTION_MARK)) {
+            Expr thenBranch = expression();
+            consume(COLON, "Expect ':' after then branch of conditional expression.");
+            Expr elseBranch = conditional();
+            expr = new Expr.Conditional(expr, thenBranch, elseBranch);
+        }
+        System.out.println(expr.toString());
         return expr;
     }
 
@@ -47,7 +60,7 @@ class Parser {
             Expr right = comparison();
             expr = new Expr.Binary(expr, operator, right);
         }
-
+        System.out.println(expr.toString());
         return expr;
     }
 
@@ -59,7 +72,7 @@ class Parser {
             Expr right = addition();
             expr = new Expr.Binary(expr, operator, right);
         }
-
+        System.out.println(expr.toString());
         return expr;
     }
 
@@ -72,6 +85,7 @@ class Parser {
             expr = new Expr.Binary(expr, operator, right);
         }
 
+        System.out.println(expr.toString());
         return expr;
     }
 
@@ -83,7 +97,7 @@ class Parser {
             Expr right = unary();
             expr = new Expr.Binary(expr, operator, right);
         }
-
+        System.out.println(expr.toString());
         return expr;
     }
 

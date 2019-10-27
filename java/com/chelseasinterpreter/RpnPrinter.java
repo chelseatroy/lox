@@ -41,5 +41,10 @@ class RpnPrinter implements Expr.Visitor<String> {
         return expr.operator.toString() + " " + expr.right.toString();
     }
 
+    @Override
+    public String visitConditionalExpr(Expr.Conditional expr) {
+        return expr.thenBranch.accept(this) + ":" + expr.elseBranch.accept(this) + "?";
+    }
+
 
 }

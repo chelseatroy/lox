@@ -14,10 +14,11 @@ public class GenerateAst {
         String outputDir = args[0];
 
         defineAst(outputDir, "Expr", Arrays.asList(
-                "Binary   : Expr left, Token operator, Expr right",
-                "Grouping : Expr expression",
-                "Literal  : Object value",
-                "Unary    : Token operator, Expr right"
+                "Binary      : Expr left, Token operator, Expr right",
+                "Grouping    : Expr expression",
+                "Literal     : Object value",
+                "Unary       : Token operator, Expr right",
+                "Conditional : Expr condition, Expr thenBranch, Expr elseBranch"
         ));
     }
 
@@ -44,9 +45,23 @@ public class GenerateAst {
         writer.println();
         writer.println("  abstract <R> R accept(Visitor<R> visitor);");
 
-
         writer.println("}");
         writer.close();
+    }
+
+    private static void defineStringRepresentation(PrintWriter writer, String baseName, String className, String fieldList) {
+        writer.println("@Override");
+        writer.println("public String toString() {");
+
+        writer.println("    StringBuilder builder = new StringBuilder(\"" + baseName + "." + className + "\\n\");");
+
+        String[] fields = fieldList.split(", ");
+        for (String field : fields) {
+            String name = field.split(" ")[1];
+            writer.println("    builder.append(\"" + name + ": \" + this." + name + " + \"\\n\");");
+        }
+        writer.println("return builder.toString();");
+        writer.println("}");
     }
 
     private static void defineType(PrintWriter writer, String baseName, String className, String fieldList) {
@@ -76,6 +91,9 @@ public class GenerateAst {
         writer.println("      return visitor.visit" +
                 className + baseName + "(this);");
         writer.println("    }");
+
+        defineStringRepresentation(writer, baseName, className, fieldList);
+
         writer.println("}");
 
     }

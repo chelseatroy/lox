@@ -265,6 +265,8 @@ class Scanner {
         singleCharacterTokens.put('+', PLUS);
         singleCharacterTokens.put(';', SEMICOLON);
         singleCharacterTokens.put('*', STAR);
+        singleCharacterTokens.put(':', COLON);
+        singleCharacterTokens.put('?', QUESTION_MARK);
     }
 
     static {
