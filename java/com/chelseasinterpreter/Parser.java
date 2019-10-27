@@ -35,7 +35,6 @@ class Parser {
             Expr right = conditional();
             expr = new Expr.Binary(expr, operator, right);
         }
-        System.out.println(expr.toString());
         return expr;
     }
 
@@ -48,7 +47,6 @@ class Parser {
             Expr elseBranch = conditional();
             expr = new Expr.Conditional(expr, thenBranch, elseBranch);
         }
-        System.out.println(expr.toString());
         return expr;
     }
 
@@ -60,7 +58,6 @@ class Parser {
             Expr right = comparison();
             expr = new Expr.Binary(expr, operator, right);
         }
-        System.out.println(expr.toString());
         return expr;
     }
 
@@ -72,7 +69,6 @@ class Parser {
             Expr right = addition();
             expr = new Expr.Binary(expr, operator, right);
         }
-        System.out.println(expr.toString());
         return expr;
     }
 
@@ -85,7 +81,6 @@ class Parser {
             expr = new Expr.Binary(expr, operator, right);
         }
 
-        System.out.println(expr.toString());
         return expr;
     }
 
@@ -97,7 +92,6 @@ class Parser {
             Expr right = unary();
             expr = new Expr.Binary(expr, operator, right);
         }
-        System.out.println(expr.toString());
         return expr;
     }
 
@@ -128,9 +122,33 @@ class Parser {
             return new Expr.Grouping(expr);
         }
 
+        // Error productions.
+        if (consuming(BANG_EQUAL, EQUAL_EQUAL)) {
+            error(previousToken(), "Missing left-hand operand.");
+            equality();
+            return null;
+        }
+
+        if (consuming(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
+            error(previousToken(), "Missing left-hand operand.");
+            comparison();
+            return null;
+        }
+
+        if (consuming(PLUS)) {
+            error(previousToken(), "Missing left-hand operand.");
+            addition();
+            return null;
+        }
+
+        if (consuming(SLASH, STAR)) {
+            error(previousToken(), "Missing left-hand operand.");
+            multiplication();
+            return null;
+        }
+
         error(nextToken(), "Expect expression.");
         return null;
-
     }
 
     private Token consume(TokenType expectedType, String errorMessage) {
